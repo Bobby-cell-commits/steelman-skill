@@ -2,21 +2,43 @@
 
 **A Claude Code skill that challenges AI recommendations against empirical evidence.**
 
-LLMs are sycophantic by default -- they tend to validate your ideas rather than pressure-test them. Steelman fixes this by launching parallel investigation agents that check claims against your actual environment, git history, and external documentation before you act on them.
+When an LLM produces an analysis and then you ask it to review that analysis, you have the same system evaluating its own output. The model has access to its own reasoning, its own framing, its own confidence -- and unsurprisingly, it tends to agree with itself. Even when prompted to "be critical," the result is usually superficial objections that don't challenge the underlying conclusions. The model is working from the same information it used to form the opinion in the first place.
+
+Steelman breaks this by **not letting the model argue with itself.** Instead of reviewing the analysis through reasoning alone, it forces the model to go read the actual data -- your files, your git history, your configs, external documentation -- and form conclusions from what it finds there. The investigation agents don't see the original analysis's reasoning; they see the claims and go check whether the evidence supports them.
+
+This is a structural solution, not a prompting trick. The skill includes specific guardrails to prevent the model from falling back into self-agreement:
+
+## How It Prevents Self-Agreement
+
+**The core problem:** When you ask an LLM to critique its own output, it has an inherent bias toward confirming what it already said. "Challenge this" prompts produce what looks like critical thinking but is actually the model generating plausible-sounding objections while preserving its original conclusions.
+
+**How steelman avoids this:**
+
+1. **Evidence over reasoning.** The skill's #1 rule: a discovered fact beats a logical argument. The investigation agents must find things in your environment -- empty directories, git patterns, existing configs, documented pain points -- not construct arguments for or against a claim. If no evidence is found, the verdict is "insufficient data," not a reasoned opinion.
+
+2. **Pre-calibration lock.** Before any investigation begins, the model records its confidence in each claim. This snapshot is immutable -- it cannot be revised after the evidence comes in. The pre/post comparison exposes when the model's confidence shifted without new supporting evidence, which is the primary signal of sycophantic drift.
+
+3. **Anti-tinmanning rule.** Every counterargument must cite specific discovered evidence. The skill explicitly names and rejects the failure mode: generic objections like "might interfere," "could have bugs," or "may not scale" that sound critical but carry no information. The examples file includes a side-by-side comparison of real critique vs tinmanning so the model has a concrete pattern to follow.
+
+4. **Single investigation cycle.** No iteration. The model investigates once, reports what it found, and stops. Research shows calibration degrades with each self-refinement pass ([Madaan et al., NeurIPS 2023](https://arxiv.org/abs/2303.17651)) -- repeated review cycles let the model gradually talk itself back into its original position.
+
+5. **Counterargument cap (2-3 per claim).** More counterarguments doesn't mean better critique -- it means the model is padding. Above 3, persuasiveness drops and the signal-to-noise ratio collapses ([Sanna et al., 2002](https://doi.org/10.1177/0146167202281009)).
+
+6. **Confirmation is a valid outcome.** The skill explicitly states that finding no problems is a "validated analysis, not a failed steelman." This removes the implicit pressure to manufacture disagreement. If the evidence supports the original recommendation, the skill says so -- contrarianism without evidence is scored as a failure mode.
 
 ## What It Does
 
 After Claude produces a multi-option analysis or recommendation ranking, `/steelman` runs a structured counter-investigation:
 
 1. **Extracts testable claims** from the analysis (5-7 max)
-2. **Records pre-investigation confidence** (so you can detect sycophantic drift later)
+2. **Records pre-investigation confidence** (immutable -- cannot be revised after)
 3. **Launches 3 parallel investigation agents:**
    - **Environment** -- checks your configs, settings, and existing workarounds
    - **Historical** -- examines git log, commit patterns, and simpler alternatives
    - **External** -- verifies claims against docs, changelogs, and known issues
 4. **Applies 6 critical tests** per claim (see below)
 5. **Produces a revised ranking** with honest verdicts: Confirmed, Weakened, Refuted, or Insufficient Data
-6. **Flags confidence drift** -- if confidence rose without new evidence, that's sycophancy
+6. **Flags confidence drift** -- if confidence rose without new evidence, that's the signal
 
 ## The 6 Critical Tests
 
@@ -95,17 +117,6 @@ steelman/
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (CLI, desktop app, or IDE extension)
 - Works with any Claude model (Opus recommended for investigation depth)
-
-## Why This Exists
-
-AI assistants have a well-documented tendency toward sycophancy -- agreeing with users rather than challenging their assumptions. This is especially dangerous for recommendation-style outputs where the AI produces a ranked list and the user acts on it.
-
-Steelman doesn't try to make Claude "more critical" through prompting alone (that just produces tinmanning -- fake objections). Instead, it forces **empirical investigation**: check the user's actual environment, git history, and external sources before rendering a verdict. Evidence beats reasoning.
-
-The approach is grounded in calibration research:
-- Single investigation cycle only -- calibration degrades with iteration ([Madaan et al., NeurIPS 2023](https://arxiv.org/abs/2303.17651))
-- Counterarguments capped at 2-3 per claim -- more reduces persuasiveness ([Sanna et al., 2002](https://doi.org/10.1177/0146167202281009))
-- Pre/post confidence tracking to detect drift
 
 ## License
 
