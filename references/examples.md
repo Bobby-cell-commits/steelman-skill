@@ -21,19 +21,23 @@ agents for testing, review, and deployment."
 - No mention of agent-related friction in MEMORY.md
 
 **Tests applied:**
-- Test #1 (Real vs Hypothetical): **FAIL** — No evidence of friction from lack
-  of custom agents. 81 plans completed successfully without them.
+- Test #1 (Real vs Hypothetical): **INCONCLUSIVE** — No documented friction from
+  lack of custom agents; latent signals not found either. Absence of evidence is
+  not evidence of absence — but the recommendation carries the burden.
 - Test #2 (Already Solved): **FAIL** — GSD provides domain-specific agents
-  already (executor, verifier, planner, debugger, researcher).
-- Test #6 (Daily vs Rare): **FAIL** — Zero usage after months of active
-  development. Not even tried once.
+  already (executor, verifier, planner, debugger, researcher). This is positive
+  evidence of an existing solution, not merely absence.
+- Test #6 (Daily vs Rare): **INCONCLUSIVE** — Zero usage observed, but this
+  means the feature was never tried, not that it would never be used.
 
 **Verdict:** Tier 1 #2 → **Tier 3 (Skip)**
 
-**Why this is GOOD critique:** Every counterargument cites specific discovered
-evidence (empty directory, 81 plans, existing GSD agents). The investigation
-brought NEW information that directly contradicted the original claim. The
-critique didn't manufacture objections — it found real evidence of non-need.
+**Why this is GOOD critique:** Test #2 is a genuine FAIL backed by positive
+evidence — the GSD agents are a real, discovered existing solution. The
+INCONCLUSIVE results on Tests #1 and #6 remove the recommendation's supporting
+argument (assumed friction + assumed usage) without fabricating disconfirmation.
+The verdict stands on the FAIL + absence of supporting evidence, not on invented
+objections.
 
 ---
 
@@ -89,11 +93,12 @@ defined boundaries."
 
 **Tests applied:**
 - Test #1 (Real vs Hypothetical): **PASS** — 85 allow rules is documented,
-  real friction
-- Test #2 (Already Solved): **PARTIAL** — 85 rules work but are high-maintenance
+  real friction (`settings.local.json:1-85`)
+- Test #2 (Already Solved): **PARTIAL** — 85 rules work but are high-maintenance;
+  they cover the problem but not cleanly
 - Test #3 (Works as Advertised): **INCONCLUSIVE** — no data for Windows/WSL
 - Test #4 (Platform Risks): **FAIL** — bubblewrap + WSL = same routing issue
-  that breaks hooks
+  that breaks hooks (documented in MEMORY.md)
 
 **Verdict:** Tier 1 #5 → **Tier 1.5 (Spike First)**
 
@@ -103,8 +108,13 @@ compatibility, not full commitment.
 
 **Why this is GOOD critique:** It doesn't kill the recommendation — it
 calibrates it. The evidence supports BOTH the value (85 rules = real friction)
-AND the risk (WSL platform concerns). The verdict matches the evidence:
-worth testing, not worth committing to blindly.
+AND the risk (WSL platform concerns, MEMORY.md citation). The verdict matches
+the evidence: worth testing, not worth committing to blindly.
+
+Note on PARTIAL: Test #2 PARTIAL means the existing solution (85 rules) covers
+the problem but with significant maintenance overhead — not a clean solution.
+This counts as 0.5 PASS + 0.5 INCONCLUSIVE: the recommendation isn't redundant,
+but it's not solving a completely unaddressed gap either.
 
 ---
 
@@ -112,10 +122,11 @@ worth testing, not worth committing to blindly.
 
 | Pattern | Signal | Example |
 |---------|--------|---------|
-| **Good critique** | Every counter cites specific evidence | Empty dir, 81 plans, existing tools |
+| **Good critique** | Every counter cites specific evidence | Test #2 FAIL: GSD agents discovered |
 | **Tinmanning** | Counters use "might", "could", "may" without evidence | "Might interfere", "may have bugs" |
-| **Confirm with caveats** | Evidence supports BOTH value and risk | 85 rules (value) + WSL risk (caveat) |
+| **Confirm with caveats** | Evidence supports BOTH value and risk | 85 rules (value) + WSL risk (citation) |
 | **Validated analysis** | Investigation confirms original claim | Env var solving documented friction |
+| **INCONCLUSIVE** | Absence of evidence, not disconfirmation | Empty dir = never tried, not "won't work" |
 
 **The goal is accuracy, not contrarianism.** Some recommendations deserve to be
 confirmed. Some deserve to be killed. Most deserve calibration — the evidence
