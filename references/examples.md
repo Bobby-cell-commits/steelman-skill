@@ -21,23 +21,25 @@ agents for testing, review, and deployment."
 - No mention of agent-related friction in MEMORY.md
 
 **Tests applied:**
-- Test #1 (Real vs Hypothetical): **INCONCLUSIVE** — No documented friction from
-  lack of custom agents; latent signals not found either. Absence of evidence is
-  not evidence of absence — but the recommendation carries the burden.
+- Test #1 (Real vs Hypothetical): **FAIL** — No evidence of friction from lack
+  of custom agents. 81 plans completed successfully without them.
 - Test #2 (Already Solved): **FAIL** — GSD provides domain-specific agents
-  already (executor, verifier, planner, debugger, researcher). This is positive
-  evidence of an existing solution, not merely absence.
-- Test #6 (Daily vs Rare): **INCONCLUSIVE** — Zero usage observed, but this
-  means the feature was never tried, not that it would never be used.
+  already (executor, verifier, planner, debugger, researcher).
+- Test #6 (Daily vs Rare): **FAIL** — Zero usage after months. **Note:** zero
+  usage *alone* would be INCONCLUSIVE (absence of adoption ≠ proven non-need), but
+  here it is corroborated by the completed-work evidence above, which makes it a
+  demonstrated non-need rather than mere non-adoption.
 
 **Verdict:** Tier 1 #2 → **Tier 3 (Skip)**
 
-**Why this is GOOD critique:** Test #2 is a genuine FAIL backed by positive
-evidence — the GSD agents are a real, discovered existing solution. The
-INCONCLUSIVE results on Tests #1 and #6 remove the recommendation's supporting
-argument (assumed friction + assumed usage) without fabricating disconfirmation.
-The verdict stands on the FAIL + absence of supporting evidence, not on invented
-objections.
+**Why this is GOOD critique:** Every counterargument cites specific discovered
+evidence (empty directory, 81 plans, existing GSD agents). The investigation
+brought NEW information that directly contradicted the original claim. Crucially,
+the empty directory is NOT read as a hard FAIL *on its own* — it's the
+*corroborating* evidence (81 completed plans, an existing GSD agent system) that
+turns "unused" into "demonstrably not needed." A bare empty directory with no such
+corroboration would be **INCONCLUSIVE**, not Skip (see rubric: zero-usage is
+INCONCLUSIVE by default).
 
 ---
 
@@ -93,12 +95,11 @@ defined boundaries."
 
 **Tests applied:**
 - Test #1 (Real vs Hypothetical): **PASS** — 85 allow rules is documented,
-  real friction (`settings.local.json:1-85`)
-- Test #2 (Already Solved): **PARTIAL** — 85 rules work but are high-maintenance;
-  they cover the problem but not cleanly
+  real friction
+- Test #2 (Already Solved): **PARTIAL** — 85 rules work but are high-maintenance
 - Test #3 (Works as Advertised): **INCONCLUSIVE** — no data for Windows/WSL
 - Test #4 (Platform Risks): **FAIL** — bubblewrap + WSL = same routing issue
-  that breaks hooks (documented in MEMORY.md)
+  that breaks hooks
 
 **Verdict:** Tier 1 #5 → **Tier 1.5 (Spike First)**
 
@@ -108,13 +109,45 @@ compatibility, not full commitment.
 
 **Why this is GOOD critique:** It doesn't kill the recommendation — it
 calibrates it. The evidence supports BOTH the value (85 rules = real friction)
-AND the risk (WSL platform concerns, MEMORY.md citation). The verdict matches
-the evidence: worth testing, not worth committing to blindly.
+AND the risk (WSL platform concerns). The verdict matches the evidence:
+worth testing, not worth committing to blindly.
 
-Note on PARTIAL: Test #2 PARTIAL means the existing solution (85 rules) covers
-the problem but with significant maintenance overhead — not a clean solution.
-This counts as 0.5 PASS + 0.5 INCONCLUSIVE: the recommendation isn't redundant,
-but it's not solving a completely unaddressed gap either.
+---
+
+## Example 4: Good Critique — Runtime-Only, Routed to a Probe
+
+**Original recommendation:** Consolidate the 12-cell CI ingest matrix into one
+sequential bash loop to cut billed minutes — Tier 1 #1.
+**Original argument:** "GitHub rounds each matrix cell up to a whole minute; the
+12 cells bill ~12 min for ~3-4 min of real compute. A sequential loop bills one
+rounded minute — ~8-9 wasted billed min/run recovered."
+
+**Investigation found:**
+- GitHub billing docs confirm per-cell round-up — a check ran.
+- Instrumented run: cells finish 10-25s each *in parallel*; ~3-4 min summed compute.
+- The 12 sources are independent (no cross-cell dependency) — a check ran.
+- BUT the sequential loop's actual wall-clock — once each source's network/HTTP
+  wait, currently overlapped across parallel cells, becomes additive — was never
+  run or timed.
+
+**Classification + verdict:**
+- Rounding-waste claim → `groundable-now` → **CONFIRMED** (docs + measurement).
+- Source independence → `groundable-now` → **CONFIRMED**.
+- The decision-relevant claim — "the loop bills ~3-4 min, saving ~8-9" — is
+  `runtime-only`: net billed minutes depend on serial wall-clock under real I/O,
+  which only a run reveals. → **NEEDS PROBE.** A correct rounding spreadsheet does
+  not settle the net once the loop runs.
+
+**Verdict:** Tier 1 #1 → **Probe (runtime-only)** — *not* Strong (ceiling rule: a
+runtime-only hinge cannot be Strong). Run the loop once as a canary, read the
+actual billed minutes, then ship.
+
+**Why this is GOOD critique:** it doesn't refute the idea — the arithmetic is
+right and confirmed. It catches that the *bottom line* is a runtime quantity the
+investigation couldn't ground, and routes it to the cheap probe that can, instead
+of blessing the sound-looking math. (This is a real production miss that
+motivated the runtime-only carve-out: the canary later timed out at 20 min, serial
+wall-clock having erased the saving — exactly what a pre-execution CONFIRM missed.)
 
 ---
 
@@ -122,11 +155,10 @@ but it's not solving a completely unaddressed gap either.
 
 | Pattern | Signal | Example |
 |---------|--------|---------|
-| **Good critique** | Every counter cites specific evidence | Test #2 FAIL: GSD agents discovered |
+| **Good critique** | Every counter cites specific evidence | Empty dir, 81 plans, existing tools |
 | **Tinmanning** | Counters use "might", "could", "may" without evidence | "Might interfere", "may have bugs" |
-| **Confirm with caveats** | Evidence supports BOTH value and risk | 85 rules (value) + WSL risk (citation) |
+| **Confirm with caveats** | Evidence supports BOTH value and risk | 85 rules (value) + WSL risk (caveat) |
 | **Validated analysis** | Investigation confirms original claim | Env var solving documented friction |
-| **INCONCLUSIVE** | Absence of evidence, not disconfirmation | Empty dir = never tried, not "won't work" |
 
 **The goal is accuracy, not contrarianism.** Some recommendations deserve to be
 confirmed. Some deserve to be killed. Most deserve calibration — the evidence
